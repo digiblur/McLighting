@@ -1083,6 +1083,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
     void onMqttConnect(bool sessionPresent) {
       DBG_OUTPUT_PORT.println("Connected to MQTT.");
       DBG_OUTPUT_PORT.print("Session present: ");
+      amqttClient.publish(mqtt_lwttopic.c_str(), qospub, true, mqttBirth);      
       DBG_OUTPUT_PORT.println(sessionPresent);
       char * message = new char[18 + strlen(HOSTNAME) + 1];
       strcpy(message, "McLighting ready: ");

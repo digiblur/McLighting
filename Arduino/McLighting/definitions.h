@@ -3,20 +3,28 @@
 //#define USE_WS2812FX_UART2     // Uses PIN is ignored & set to TX/GPIO1  Uses WS2812FX, see: https://github.com/kitesurfer1404/WS2812FX
 
 // Neopixel
-#define PIN 14           // PIN (14 / D5) where neopixel / WS2811 strip is attached
+#define PIN D1           // PIN (14 / D5) where neopixel / WS2811 strip is attached
 #define NUMLEDS 24       // Number of leds in the strip
 #define BUILTIN_LED 2    // ESP-12F has the built in LED on GPIO2, see https://github.com/esp8266/Arduino/issues/2192
 #define BUTTON 4         // Input pin (4 / D2) for switching the LED strip on / off, connect this PIN to ground to trigger button.
 
-const char HOSTNAME[] = "McLighting01";   // Friedly hostname
+#define pirPin D2
+#define ring1Pin D5
+#define ring2Pin D6
+#define pirOnStr    "Yes"
+#define pirOffStr   "No"
+#define ringOnStr   "1"
+#define ringOffStr  "0"
+		 
+const char HOSTNAME[] = "digiBell-MCL";   // Friedly hostname
 
 #define HTTP_OTA             // If defined, enable ESP8266HTTPUpdateServer OTA code.
-//#define ENABLE_OTA         // If defined, enable Arduino OTA code.
+#define ENABLE_OTA         // If defined, enable Arduino OTA code.
 #define ENABLE_AMQTT         // If defined, enable Async MQTT code, see: https://github.com/marvinroger/async-mqtt-client
 //#define ENABLE_MQTT        // If defined, enable MQTT client code, see: https://github.com/toblum/McLighting/wiki/MQTT-API
 #define ENABLE_HOMEASSISTANT // If defined, enable Homeassistant integration, ENABLE_MQTT or ENABLE_AMQTT must be active
-#define ENABLE_BUTTON        // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control
-//#define MQTT_HOME_ASSISTANT_SUPPORT // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
+//#define ENABLE_BUTTON        // If defined, enable button handling code, see: https://github.com/toblum/McLighting/wiki/Button-control
+#define MQTT_HOME_ASSISTANT_SUPPORT // If defined, use AMQTT and select Tools -> IwIP Variant -> Higher Bandwidth
 #define ENABLE_LEGACY_ANIMATIONS // Dont disbale this for now
 #define ENABLE_E131              // E1.31 implementation
 
@@ -70,11 +78,23 @@ uint32_t autoParams[][4] = { // color, speed, mode, duration (seconds)
     uint8_t qossub = 0; // PubSubClient can sub qos 0 or 1
   #endif
 
+    String mqtt_outtopic_pir = String(HOSTNAME) + "/pir";
+    int pirStatus;
+    int pirValue;
+    String mqtt_outtopic_ring1 = String(HOSTNAME) + "/ring1";
+    int ring1Value;
+    int ring1Status;
+    String mqtt_outtopic_ring2 = String(HOSTNAME) + "/ring2";
+    int ring2Value;
+    int ring2Status;															
   #ifdef ENABLE_AMQTT
     String mqtt_intopic = String(HOSTNAME) + "/in";
     String mqtt_outtopic = String(HOSTNAME) + "/out";
+    String mqtt_lwttopic = String(HOSTNAME) + "/LWT";
     uint8_t qossub = 0; // AMQTT can sub qos 0 or 1 or 2
     uint8_t qospub = 0; // AMQTT can pub qos 0 or 1 or 2
+    #define mqttBirth "Online"
+    #define mqttDeath "Offline"
   #endif
 
   #ifdef ENABLE_HOMEASSISTANT

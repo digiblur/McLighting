@@ -246,6 +246,9 @@ void setup() {
 #ifdef ENABLE_BUTTON
   pinMode(BUTTON,INPUT_PULLUP);
 #endif
+  pinMode(pirPin,INPUT_PULLUP);
+  pinMode(ring1Pin,INPUT_PULLUP);
+  pinMode(ring2Pin,INPUT_PULLUP);
   // start ticker with 0.5 because we start in AP mode and try to connect
   ticker.attach(0.5, tick);
 
@@ -453,6 +456,7 @@ void setup() {
 
   #ifdef ENABLE_AMQTT
     if (mqtt_host != "" && atoi(mqtt_port) > 0) {
+      amqttClient.setWill(mqtt_lwttopic.c_str(),qospub,true,mqttDeath,0);
       amqttClient.onConnect(onMqttConnect);
       amqttClient.onDisconnect(onMqttDisconnect);
       amqttClient.onMessage(onMqttMessage);
@@ -949,6 +953,83 @@ void setup() {
   #endif
 }
 
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= //
+// checkPIR                                                      //
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= //
+void checkPIR() {
+  pirValue = digitalRead(pirPin); //read state of the PIR
+  // AM312 goes LOW with no motion
+  if (pirValue == LOW && pirStatus != 0) {
+    digitalWrite(BUILTIN_LED, HIGH);  // LED off
+    DBG_OUTPUT_PORT.println("PIR - OFF");
+    #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic_pir.c_str(), pirOffStr,false);
+    #endif
+    #ifdef ENABLE_AMQTT
+    amqttClient.publish(mqtt_outtopic_pir.c_str(), qospub, false, pirOffStr);
+    #endif
+    pirStatus = 0;
+  }
+  else if (pirValue == HIGH && pirStatus != 1) {
+    digitalWrite(BUILTIN_LED, LOW);  // LED on
+    DBG_OUTPUT_PORT.println("PIR - ON");
+    #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic_pir.c_str(), pirOnStr,false);
+    #endif
+    #ifdef ENABLE_AMQTT
+    amqttClient.publish(mqtt_outtopic_pir.c_str(), qospub, false, pirOnStr);
+    #endif
+    pirStatus = 1;
+  }
+}
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= //
+// checkRING                                                     //
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= //
+void checkRING() {
+  ring1Value = digitalRead(ring1Pin); //read state of the ring
+  ring2Value = digitalRead(ring2Pin); 
+  if (ring1Value == HIGH && ring1Status != 0) {
+    DBG_OUTPUT_PORT.println("Ring1 - OFF");
+    #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic_ring1.c_str(), ringOffStr,false);
+    #endif
+    #ifdef ENABLE_AMQTT
+    amqttClient.publish(mqtt_outtopic_ring1.c_str(), qospub, false, ringOffStr);
+    #endif
+    ring1Status = 0;
+  }
+  else if (ring1Value == LOW && ring1Status != 1) {
+    DBG_OUTPUT_PORT.println("Ring1 - ON");
+    #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic_ring1.c_str(), ringOnStr,false);
+    #endif
+    #ifdef ENABLE_AMQTT
+    amqttClient.publish(mqtt_outtopic_ring1.c_str(), qospub, false, ringOnStr);
+    #endif
+    ring1Status = 1;
+  }
+  if (ring2Value == HIGH && ring2Status != 0) {
+    DBG_OUTPUT_PORT.println("Ring2 - OFF");
+    #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic_ring2.c_str(), ringOffStr,false);
+    #endif
+    #ifdef ENABLE_AMQTT
+    amqttClient.publish(mqtt_outtopic_ring2.c_str(), qospub, false, ringOffStr);
+    #endif
+    ring2Status = 0;
+  }
+  else if (ring2Value == LOW && ring2Status != 1) {
+    DBG_OUTPUT_PORT.println("Ring2 - ON");
+    #ifdef ENABLE_MQTT
+    mqtt_client.publish(mqtt_outtopic_ring2.c_str(), ringOnStr,false);
+    #endif
+    #ifdef ENABLE_AMQTT
+    amqttClient.publish(mqtt_outtopic_ring2.c_str(), qospub, false, ringOnStr);
+    #endif
+    ring2Status = 1;
+  }
+}
+
 
 void loop() {
   #ifdef ENABLE_BUTTON
@@ -1106,4 +1187,6 @@ void loop() {
       EEPROM.commit();
     }
   #endif
+  checkPIR();
+  checkRING();
 }
